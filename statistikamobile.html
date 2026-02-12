@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Statistika Mobile</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f6f9;
+}
+
+/* HEADER */
+.header {
+    background: linear-gradient(135deg, #4e73df, #1cc88a);
+    color: white;
+    padding: 25px 20px;
+    border-radius: 0 0 25px 25px;
+    text-align: center;
+}
+
+.header h2 {
+    margin: 0;
+    font-weight: 500;
+}
+
+.sub {
+    margin-top: 5px;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+/* CONTAINER */
+.container {
+    padding: 15px;
+    padding-bottom: 80px;
+}
+
+/* WALLET SCROLL */
+.wallet-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.wallet-scroll button {
+    flex: none;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 20px;
+    background: #e3e6f0;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.wallet-active {
+    background: #4e73df !important;
+    color: white;
+}
+
+/* CARD */
+.card {
+    background: white;
+    padding: 15px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 15px;
+}
+
+/* BACK BUTTON */
+.back-btn {
+    margin-top: 15px;
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    background: #858796;
+    color: white;
+    font-weight: bold;
+}
+
+/* BOTTOM NAV */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: white;
+    display: flex;
+    justify-content: space-around;
+    padding: 10px 0;
+    box-shadow: 0 -5px 10px rgba(0,0,0,0.1);
+}
+
+.bottom-nav button {
+    border: none;
+    background: none;
+    font-size: 14px;
+    font-weight: bold;
+    color: #858796;
+}
+
+.bottom-nav button.active {
+    color: #4e73df;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+    <h2>📊 Statistik Keuangan</h2>
+    <div class="sub" id="namaWallet">Tabungan</div>
+</div>
+
+<div class="container">
+
+    <div class="wallet-scroll">
+        <button onclick="gantiWallet('Tabungan',this)" class="wallet-active">Tabungan</button>
+        <button onclick="gantiWallet('Jajan',this)">Jajan</button>
+        <button onclick="gantiWallet('Darurat',this)">Darurat</button>
+        <button onclick="gantiWallet('Investasi',this)">Investasi</button>
+    </div>
+
+    <div class="card">
+        <canvas id="chartBar"></canvas>
+    </div>
+
+    <div class="card">
+        <canvas id="chartDoughnut"></canvas>
+    </div>
+
+    <button class="back-btn" onclick="kembali()">⬅ Kembali ke Home</button>
+
+</div>
+
+<div class="bottom-nav">
+    <button onclick="kembali()">🏠 Home</button>
+    <button class="active">📊 Statistik</button>
+</div>
+
+<script>
+let currentWallet = "Tabungan";
+
+let dataWallets = JSON.parse(localStorage.getItem("dataWallets")) || {
+    Tabungan:{saldo:0, transaksi:[]},
+    Jajan:{saldo:0, transaksi:[]},
+    Darurat:{saldo:0, transaksi:[]},
+    Investasi:{saldo:0, transaksi:[]}
+};
+
+let chartBar, chartDoughnut;
+
+function gantiWallet(nama, el){
+    currentWallet = nama;
+    document.getElementById("namaWallet").innerText = nama;
+
+    document.querySelectorAll(".wallet-scroll button")
+    .forEach(btn=>btn.classList.remove("wallet-active"));
+
+    el.classList.add("wallet-active");
+
+    updateCharts();
+}
+
+function updateCharts(){
+    let w = dataWallets[currentWallet];
+
+    let totalMasuk = w.transaksi
+        .filter(t=>t.tipe==="masuk")
+        .reduce((a,b)=>a+b.jumlah,0);
+
+    let totalKeluar = w.transaksi
+        .filter(t=>t.tipe==="keluar")
+        .reduce((a,b)=>a+b.jumlah,0);
+
+    if(chartBar) chartBar.destroy();
+    chartBar = new Chart(document.getElementById("chartBar"),{
+        type:"bar",
+        data:{
+            labels:["Pemasukan","Pengeluaran"],
+            datasets:[{
+                data:[totalMasuk,totalKeluar],
+                backgroundColor:["#1cc88a","#e74a3b"]
+            }]
+        },
+        options:{
+            responsive:true,
+            plugins:{ legend:{display:false} }
+        }
+    });
+
+    if(chartDoughnut) chartDoughnut.destroy();
+    chartDoughnut = new Chart(document.getElementById("chartDoughnut"),{
+        type:"doughnut",
+        data:{
+            labels:["Saldo Sekarang","Terpakai"],
+            datasets:[{
+                data:[w.saldo, totalMasuk - w.saldo],
+                backgroundColor:["#4e73df","#f6c23e"]
+            }]
+        },
+        options:{ responsive:true }
+    });
+}
+
+function kembali(){
+    window.location.href="mobileversion.html";
+}
+
+updateCharts();
+</script>
+
+</body>
+</html>
